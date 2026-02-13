@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HAYPHIM CINEMA</title>
+    <style>
+        :root {
+            --primary: #ff0000;
+            --bg: #050505;
+            --surface: #121212;
+            --text: #ffffff;
+            --text-dim: #a0a0a0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Player Section */
+        .video-wrapper {
+            position: sticky;
+            top: 0;
+            width: 100%;
+            background: #000;
+            z-index: 100;
+            aspect-ratio: 16/9;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+        }
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Info Section */
+        .content-info {
+            padding: 24px 16px;
+            background: linear-gradient(to bottom, var(--surface), var(--bg));
+            flex-grow: 1;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge.active { color: var(--primary); border: 1px solid var(--primary); }
+
+        .movie-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0 0 8px 0;
+            line-height: 1.2;
+        }
+
+        .movie-meta {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .description {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #d1d1d1;
+            margin-top: 10px;
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: #1a1a1a;
+            background: linear-gradient(90deg, #1a1a1a 25%, #252525 50%, #1a1a1a 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="video-wrapper">
+            <iframe id="videoPlayer" src="" allowfullscreen allow="autoplay; encrypted-media" scrolling="no"></iframe>
+        </div>
+
+        <div class="content-info">
+            <div class="badge-row">
+                <span class="badge active">4K ULTRA HD</span>
+                <span class="badge" id="langBadge">VIETSUB</span>
+                <span class="badge">FREE</span>
+            </div>
+            <h1 class="movie-title" id="title">Đang tải...</h1>
+            <div class="movie-meta" id="meta">Vui lòng chờ giây lát...</div>
+            <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 20px 0;">
+            <div class="description">Giao diện xem phim cao cấp được tối ưu hóa cho trải nghiệm di động trên Telegram.</div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const link = urlParams.get('link');
+        const title = urlParams.get('title');
+        const meta = urlParams.get('meta');
+
+        if (link) document.getElementById('videoPlayer').src = link;
+        if (title) document.getElementById('title').innerText = decodeURIComponent(title);
+        if (meta) document.getElementById('meta').innerText = decodeURIComponent(meta);
+    </script>
+</body>
+</html>
+
+<style>
+footer {
+    display: flex;
+    justify-content: center; /* căn giữa ngang */
+    align-items: center;     /* căn giữa dọc (nếu có chiều cao) */
+    padding: 15px 0;
+    color: #aaa;
+    font-size: 14px;
+}
+</style>
+
+<footer>
+    © 2026 HAYPHIM THE CINEMA. All rights reserved.
+</footer>
