@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>HayPhim Cinema</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0a0a0f;
+  --surface:#12121a;
+  --surface2:#1a1a26;
+  --accent:#e50914;
+  --accent2:#f40612;
+  --text:#fff;
+  --text2:#9aa0a6;
+  --border:#2a2a3a;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Segoe UI',sans-serif;
+}
+
+/* HEADER */
+header{
+  background:rgba(0,0,0,0.85);
+  backdrop-filter:blur(20px);
+  padding:14px 20px;
+  display:flex;
+  align-items:center;
+  border-bottom:1px solid var(--border);
+}
+
+.logo{
+  font-weight:800;
+  letter-spacing:1px;
+  font-size:18px;
+}
+.logo span{color:var(--accent)}
+
+.header-title{
+  margin-left:12px;
+  font-size:13px;
+  color:var(--text2);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* PLAYER */
+.player-section{
+  background:#000;
+}
+
+.player-container{
+  max-width:1000px;
+  margin:auto;
+  position:relative;
+}
+
+#videoPlayer{
+  width:100%;
+  aspect-ratio:16/9;
+  display:none;
+  background:#000;
+}
+
+#iframePlayer{
+  width:100%;
+  aspect-ratio:16/9;
+  display:none;
+  border:none;
+}
+
+/* LOADING */
+#loadingOverlay{
+  position:absolute;
+  inset:0;
+  background:#000;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+}
+
+.spinner{
+  width:46px;
+  height:46px;
+  border:3px solid var(--border);
+  border-top:3px solid var(--accent);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ERROR */
+#errorBox{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  height:200px;
+  color:var(--text2);
+}
+
+/* WATERMARK */
+.watermark{
+  position:absolute;
+  top:10px;
+  right:12px;
+  font-size:11px;
+  color:rgba(255,255,255,0.25);
+}
+
+/* INFO */
+.info-section{
+  max-width:1000px;
+  margin:auto;
+  padding:20px 16px;
+}
+
+.movie-title{
+  font-size:20px;
+  font-weight:700;
+}
+
+.meta{
+  margin-top:8px;
+  font-size:13px;
+  color:var(--text2);
+}
+
+.divider{
+  height:1px;
+  background:var(--border);
+  margin:16px 0;
+}
+
+/* FOOTER */
+footer{
+  text-align:center;
+  padding:20px;
+  font-size:11px;
+  color:var(--text2);
+  border-top:1px solid var(--border);
+}
+footer span{color:var(--accent)}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">Hay<span>Phim</span></div>
+  <div class="header-title" id="headerTitle">Đang tải...</div>
+</header>
+
+<div class="player-section">
+  <div class="player-container">
+
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <p style="font-size:13px;color:#888">Đang tải video...</p>
+    </div>
+
+    <video id="videoPlayer" controls playsinline></video>
+    <iframe id="iframePlayer" allowfullscreen></iframe>
+
+    <div id="errorBox">
+      <p>Không thể phát video</p>
+    </div>
+
+    <div class="watermark">PHIM HAY CHẤT LƯỢNG CAO</div>
+
+  </div>
+</div>
+
+<div class="info-section">
+  <div class="movie-title" id="movieTitle"></div>
+  <div class="meta" id="streamInfo"></div>
+
+  <div class="divider"></div>
+</div>
+
+<footer>
+Copyright © <span>HayPhim</span> Movie TeleBot . All Rights Reserved
+</footer>
+
+<script>
+const params = new URLSearchParams(location.search);
+const videoUrl = decodeURIComponent(params.get("url") || "");
+const movieTitle = decodeURIComponent(params.get("title") || "PHIM HAY CHẤT LƯỢNG");
+
+document.title = movieTitle;
+document.getElementById("headerTitle").textContent = movieTitle;
+document.getElementById("movieTitle").textContent = movieTitle;
+document.getElementById("streamInfo").textContent = "Đang phát nội dung HD Vietsub";
+
+/* TELEGRAM */
+if(window.Telegram){
+  Telegram.WebApp.ready();
+  Telegram.WebApp.expand();
+}
+
+/* PLAYER */
+function showError(){
+  loadingOverlay.style.display="none";
+  errorBox.style.display="flex";
+}
+
+function showIframe(){
+  loadingOverlay.style.display="none";
+  iframePlayer.style.display="block";
+  iframePlayer.src=videoUrl;
+}
+
+function init(){
+  if(!videoUrl){showError();return}
+
+  const video=document.getElementById("videoPlayer");
+  const isM3U8=videoUrl.includes(".m3u8");
+
+  if(isM3U8 && Hls.isSupported()){
+    const hls=new Hls();
+    hls.loadSource(videoUrl);
+    hls.attachMedia(video);
+
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+      loadingOverlay.style.display="none";
+      video.style.display="block";
+      video.play().catch(()=>{});
+    });
+
+    hls.on(Hls.Events.ERROR,()=>showIframe());
+  } 
+  else if(video.canPlayType("application/vnd.apple.mpegurl")){
+    video.src=videoUrl;
+    video.addEventListener("loadedmetadata",()=>{
+      loadingOverlay.style.display="none";
+      video.style.display="block";
+    });
+  } 
+  else{
+    showIframe();
+  }
+}
+
+window.onload=init;
+</script>
+
+</body>
+</html>
