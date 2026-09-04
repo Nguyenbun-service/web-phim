@@ -1,5 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/task", "destination": "/task.html" }
-  ]
-}
