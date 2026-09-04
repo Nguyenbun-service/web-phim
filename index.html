@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#000000"
+    >
+
+    <title>Phim Hay VN</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            color: #fff;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Arial,
+                sans-serif;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        .app {
+            width: 100%;
+            height: 100%;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+
+        .header {
+            flex: 0 0 auto;
+
+            padding:
+                calc(env(safe-area-inset-top) + 14px)
+                16px
+                12px;
+
+            background: #080808;
+            border-bottom: 1px solid #222;
+            z-index: 10;
+        }
+
+        .brand {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.25;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .episode {
+            margin-top: 5px;
+
+            font-size: 13px;
+            color: #aaa;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .player-area {
+            position: relative;
+
+            width: 100%;
+            flex: 1 1 auto;
+
+            min-height: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            background: #000;
+        }
+
+        video {
+            display: block;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: contain;
+
+            background: #000;
+        }
+
+        .stream-frame {
+            display: none;
+
+            width: 100%;
+            height: 100%;
+
+            border: 0;
+            outline: none;
+
+            background: #000;
+        }
+
+        .stream-frame.show {
+            display: block;
+        }
+
+        .loading {
+            position: absolute;
+            inset: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            padding: 24px;
+
+            color: #bbb;
+            font-size: 14px;
+
+            text-align: center;
+
+            background: #000;
+
+            z-index: 5;
+        }
+
+        .loading.hidden {
+            display: none;
+        }
+
+        .error {
+            position: absolute;
+
+            left: 20px;
+            right: 20px;
+            top: 50%;
+
+            transform: translateY(-50%);
+
+            padding: 20px;
+
+            border: 1px solid #333;
+            border-radius: 12px;
+
+            background: rgba(15, 15, 15, 0.97);
+
+            color: #ddd;
+
+            text-align: center;
+
+            font-size: 14px;
+            line-height: 1.5;
+
+            display: none;
+
+            z-index: 20;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .error-title {
+            margin-bottom: 8px;
+
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .error-text {
+            color: #aaa;
+        }
+
+        .open-button {
+            margin-top: 15px;
+
+            padding: 10px 16px;
+
+            border: 0;
+            border-radius: 8px;
+
+            background: #fff;
+            color: #000;
+
+            font-size: 14px;
+            font-weight: 600;
+
+            cursor: pointer;
+        }
+
+        .footer {
+            flex: 0 0 auto;
+
+            padding:
+                10px
+                16px
+                calc(env(safe-area-inset-bottom) + 10px);
+
+            background: #080808;
+            border-top: 1px solid #222;
+
+            color: #777;
+
+            font-size: 11px;
+            text-align: center;
+        }
+
+        /*
+         * Khi đang dùng StreamVSMOV iframe,
+         * player chiếm toàn bộ vùng xem.
+         */
+        .app.embed-mode .header {
+            display: none;
+        }
+
+        .app.embed-mode .footer {
+            display: none;
+        }
+
+        .app.embed-mode .player-area {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+
+<div
+    id="app"
+    class="app"
+>
+
+    <header class="header">
+
+        <div
+            id="title"
+            class="brand"
+        >
+            Phim Hay VN
+        </div>
+
+        <div
+            id="episode"
+            class="episode"
+        >
+            Đang tải nguồn phát...
+        </div>
+
+    </header>
+
+    <main class="player-area">
+
+        <!--
+            Player HLS dành cho nguồn .m3u8
+        -->
+        <video
+            id="video"
+            controls
+            playsinline
+            webkit-playsinline
+            preload="metadata"
+        ></video>
+
+        <!--
+            StreamVSMOV có URL dạng:
+
+            https://v2.streamvsmov.com/video/UUID
+
+            Đây là trang/player HTML,
+            KHÔNG phải M3U8.
+
+            Vì vậy dùng iframe.
+        -->
+        <iframe
+            id="streamFrame"
+            class="stream-frame"
+            allow="
+                autoplay;
+                fullscreen;
+                encrypted-media;
+                picture-in-picture;
+                accelerometer;
+                gyroscope;
+            "
+            allowfullscreen
+            webkitallowfullscreen
+            referrerpolicy="origin"
+        ></iframe>
+
+        <div
+            id="loading"
+            class="loading"
+        >
+            Đang tải nguồn phát...
+        </div>
+
+        <div
+            id="error"
+            class="error"
+        >
+
+            <div class="error-title">
+                Không thể mở nguồn phim
+            </div>
+
+            <div
+                id="errorText"
+                class="error-text"
+            >
+                Nguồn phát không hợp lệ.
+            </div>
+
+            <button
+                id="openButton"
+                class="open-button"
+                type="button"
+            >
+                Mở nguồn phát
+            </button>
+
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        Phim Hay VN
+    </footer>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1.6.2/dist/hls.min.js"></script>
+
+
+<script>
+(function () {
+
+    "use strict";
+
+
+    /*
+     * ==============================
+     * ĐỌC QUERY PARAMETER
+     * ==============================
+     */
+
+    const params =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const title =
+        params.get("title") ||
+        "Phim Hay VN";
+
+
+    const episode =
+        params.get("episode") ||
+        "";
+
+
+    const stream =
+        params.get("stream") ||
+        "";
+
+
+    /*
+     * ==============================
+     * ELEMENT
+     * ==============================
+     */
+
+    const app =
+        document.getElementById("app");
+
+
+    const video =
+        document.getElementById("video");
+
+
+    const streamFrame =
+        document.getElementById("streamFrame");
+
+
+    const titleElement =
+        document.getElementById("title");
+
+
+    const episodeElement =
+        document.getElementById("episode");
+
+
+    const loadingElement =
+        document.getElementById("loading");
+
+
+    const errorElement =
+        document.getElementById("error");
+
+
+    const errorTextElement =
+        document.getElementById("errorText");
+
+
+    const openButton =
+        document.getElementById("openButton");
+
+
+    /*
+     * ==============================
+     * HIỂN THỊ THÔNG TIN
+     * ==============================
+     */
+
+    titleElement.textContent =
+        title;
+
+
+    episodeElement.textContent =
+        episode ||
+        "Nguồn phát";
+
+
+    /*
+     * ==============================
+     * LOADING
+     * ==============================
+     */
+
+    function showLoading() {
+
+        loadingElement.classList.remove(
+            "hidden"
+        );
+
+    }
+
+
+    function hideLoading() {
+
+        loadingElement.classList.add(
+            "hidden"
+        );
+
+    }
+
+
+    /*
+     * ==============================
+     * ERROR
+     * ==============================
+     */
+
+    function showError(message) {
+
+        hideLoading();
+
+        errorTextElement.textContent =
+            message;
+
+        errorElement.classList.add(
+            "show"
+        );
+
+    }
+
+
+    function hideError() {
+
+        errorElement.classList.remove(
+            "show"
+        );
+
+    }
+
+
+    /*
+     * ==============================
+     * URL
+     * ==============================
+     */
+
+    function isHttpUrl(url) {
+
+        if (!url) {
+            return false;
+        }
+
+        try {
+
+            const parsed =
+                new URL(url);
+
+            return (
+                parsed.protocol === "https:" ||
+                parsed.protocol === "http:"
+            );
+
+        } catch (e) {
+
+            return false;
+
+        }
+
+    }
+
+
+    /*
+     * ==============================
+     * NHẬN DIỆN M3U8
+     * ==============================
+     */
+
+    function isM3U8(url) {
+
+        if (!isHttpUrl(url)) {
+            return false;
+        }
+
+        const lower =
+            url.toLowerCase();
+
+        /*
+         * Hỗ trợ:
+
+         * file.m3u8
+         * file.m3u8?token=...
+         * .../playlist?format=m3u8
+         */
+
+        return (
+            lower.includes(".m3u8") ||
+            lower.includes("m3u8")
+        );
+
+    }
+
+
+    /*
+     * ==============================
+     * NHẬN DIỆN STREAMVSMOV
+     * ==============================
+     */
+
+    function isStreamVSMOV(url) {
+
+        if (!isHttpUrl(url)) {
+            return false;
+        }
+
+        try {
+
+            const parsed =
+                new URL(url);
+
+            const hostname =
+                parsed.hostname.toLowerCase();
+
+
+            /*
+             * Chỉ coi đây là
+             * StreamVSMOV khi đúng domain.
+             */
+
+            const correctDomain =
+                hostname ===
+                    "streamvsmov.com" ||
+
+                hostname.endsWith(
+                    ".streamvsmov.com"
+                );
+
+
+            if (!correctDomain) {
+                return false;
+            }
+
+
+            /*
+             * URL mẫu:
+
+             * /video/UUID
+             */
+
+            return (
+                parsed.pathname
+                    .toLowerCase()
+                    .startsWith("/video/")
+            );
+
+        } catch (e) {
+
+            return false;
+
+        }
+
+    }
+
+
+    /*
+     * ==============================
+     * STREAMVSMOV PLAYER
+     * ==============================
+     */
+
+    function startStreamVSMOV(url) {
+
+        console.log(
+            "[Phim Hay VN] StreamVSMOV:",
+            url
+        );
+
+
+        /*
+         * Ẩn video HLS.
+         */
+
+        video.pause();
+
+        video.removeAttribute(
+            "src"
+        );
+
+        video.style.display =
+            "none";
+
+
+        /*
+         * Hiển thị iframe.
+         */
+
+        streamFrame.src =
+            url;
+
+        streamFrame.classList.add(
+            "show"
+        );
+
+
+        /*
+         * Cho iframe chiếm
+         * toàn bộ màn hình.
+         */
+
+        app.classList.add(
+            "embed-mode"
+        );
+
+
+        /*
+         * Vì iframe là trang bên ngoài,
+         * không thể dùng loadedmetadata
+         * của <video>.
+         *
+         * Chờ một khoảng ngắn rồi
+         * bỏ loading.
+         */
+
+        setTimeout(
+            function () {
+
+                hideLoading();
+
+            },
+            1500
+        );
+
+
+        /*
+         * Nếu người dùng bấm
+         * "Mở nguồn phát",
+         * mở trực tiếp StreamVSMOV.
+         */
+
+        openButton.onclick =
+            function () {
+
+                window.open(
+                    url,
+                    "_blank",
+                    "noopener,noreferrer"
+                );
+
+            };
+
+    }
+
+
+    /*
+     * ==============================
+     * M3U8 PLAYER
+     * ==============================
+     */
+
+    function startM3U8(url) {
+
+        console.log(
+            "[Phim Hay VN] M3U8:",
+            url
+        );
+
+
+        video.style.display =
+            "block";
+
+
+        streamFrame.classList.remove(
+            "show"
+        );
+
+
+        app.classList.remove(
+            "embed-mode"
+        );
+
+
+        /*
+         * ==========================
+         * IPHONE / SAFARI
+         * ==========================
+         */
+
+        if (
+            video.canPlayType(
+                "application/vnd.apple.mpegurl"
+            )
+        ) {
+
+            video.src =
+                url;
+
+
+            video.addEventListener(
+                "loadedmetadata",
+                function () {
+
+                    hideLoading();
+
+                },
+                {
+                    once: true
+                }
+            );
+
+
+            video.addEventListener(
+                "error",
+                function () {
+
+                    showError(
+                        "Safari không thể phát nguồn HLS này."
+                    );
+
+                },
+                {
+                    once: true
+                }
+            );
+
+
+            openButton.onclick =
+                function () {
+
+                    window.open(
+                        url,
+                        "_blank",
+                        "noopener,noreferrer"
+                    );
+
+                };
+
+
+            return;
+
+        }
+
+
+        /*
+         * ==========================
+         * CHROME / ANDROID / DESKTOP
+         * ==========================
+         */
+
+        if (
+            window.Hls &&
+            Hls.isSupported()
+        ) {
+
+            const hls =
+                new Hls({
+                    enableWorker: true,
+                    lowLatencyMode: false,
+                    backBufferLength: 90
+                });
+
+
+            hls.loadSource(
+                url
+            );
+
+
+            hls.attachMedia(
+                video
+            );
+
+
+            hls.on(
+                Hls.Events.MANIFEST_PARSED,
+                function () {
+
+                    hideLoading();
+
+                }
+            );
+
+
+            hls.on(
+                Hls.Events.ERROR,
+                function (
+                    event,
+                    data
+                ) {
+
+                    console.log(
+                        "[HLS ERROR]",
+                        data
+                    );
+
+
+                    if (
+                        data &&
+                        data.fatal
+                    ) {
+
+                        showError(
+                            "Không thể tải nguồn HLS."
+                        );
+
+
+                        try {
+
+                            hls.destroy();
+
+                        } catch (e) {}
+
+                    }
+
+                }
+            );
+
+
+            openButton.onclick =
+                function () {
+
+                    window.open(
+                        url,
+                        "_blank",
+                        "noopener,noreferrer"
+                    );
+
+                };
+
+
+            return;
+
+        }
+
+
+        /*
+         * Không hỗ trợ HLS.
+         */
+
+        showError(
+            "Thiết bị hoặc trình duyệt không hỗ trợ nguồn HLS này."
+        );
+
+    }
+
+
+    /*
+     * ==============================
+     * KHỞI ĐỘNG PLAYER
+     * ==============================
+     */
+
+    function startPlayer() {
+
+        hideError();
+
+        showLoading();
+
+
+        /*
+         * Không có stream.
+         */
+
+        if (!stream) {
+
+            showError(
+                "Telegram Bot chưa truyền URL nguồn phát."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * URL không hợp lệ.
+         */
+
+        if (!isHttpUrl(stream)) {
+
+            showError(
+                "URL nguồn phát không hợp lệ."
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * ==========================
+         * STREAMVSMOV
+         * ==========================
+         *
+         * Ví dụ:
+
+         * https://v2.streamvsmov.com/video/UUID
+         *
+         * Đây là PLAYER PAGE,
+         * không phải M3U8.
+         */
+
+        if (
+            isStreamVSMOV(stream)
+        ) {
+
+            startStreamVSMOV(
+                stream
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * ==========================
+         * M3U8
+         * ==========================
+         */
+
+        if (
+            isM3U8(stream)
+        ) {
+
+            startM3U8(
+                stream
+            );
+
+            return;
+
+        }
+
+
+        /*
+         * ==========================
+         * NGUỒN KHÁC
+         * ==========================
+         *
+         * Không tự đoán là M3U8.
+         *
+         * Thử mở trực tiếp bằng iframe.
+         */
+
+        console.log(
+            "[Phim Hay VN] Unknown stream:",
+            stream
+        );
+
+
+        startStreamVSMOV(
+            stream
+        );
+
+    }
+
+
+    /*
+     * ==============================
+     * CHẠY
+     * ==============================
+     */
+
+    startPlayer();
+
+
+})();
+</script>
+
+</body>
+</html>
