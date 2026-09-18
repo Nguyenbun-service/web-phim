@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#05070b">
+<title>OBSIDIAN — Secure Messenger</title>
+<style>
+:root{
+  --bg:#05070b;
+  --panel:#0b1018;
+  --panel2:#101722;
+  --line:#1d2937;
+  --text:#edf4fb;
+  --muted:#7f91a5;
+  --cyan:#65d9ff;
+  --green:#5de0a0;
+  --red:#ff687d;
+}
+*{box-sizing:border-box}
+html,body{
+  margin:0;
+  min-height:100%;
+  background:
+    radial-gradient(circle at 50% -10%,#10283a 0,#05070b 42%,#030407 100%);
+  color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display",
+  "Segoe UI",sans-serif;
+}
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+.app{
+  width:100%;
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:18px;
+}
+.shell{
+  width:min(430px,100%);
+  min-height:min(860px,calc(100vh - 36px));
+  background:rgba(7,11,17,.96);
+  border:1px solid #1b2734;
+  border-radius:30px;
+  box-shadow:0 30px 100px #000c;
+  overflow:hidden;
+  position:relative;
+}
+.screen{
+  display:none;
+  min-height:100%;
+  padding:28px;
+}
+.screen.active{
+  display:flex;
+  flex-direction:column;
+}
+.brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:800;
+  letter-spacing:.14em;
+}
+.dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 18px var(--cyan);
+}
+.kicker{
+  margin-top:30px;
+  color:var(--muted);
+  font-size:11px;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.title{
+  font-size:34px;
+  line-height:1.05;
+  letter-spacing:-.04em;
+  margin:15px 0 10px;
+}
+.sub{
+  color:var(--muted);
+  line-height:1.6;
+  font-size:14px;
+}
+.spacer{
+  flex:1;
+}
+.status{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 14px;
+  margin:18px 0;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background:#091018;
+  font-size:13px;
+}
+.ok{color:var(--green)}
+.muted{color:var(--muted)}
+.btn{
+  width:100%;
+  border:1px solid #284254;
+  background:#10202c;
+  color:#eafaff;
+  border-radius:15px;
+  padding:15px;
+  font-weight:750;
+  transition:.2s;
+}
+.btn:hover{
+  transform:translateY(-1px);
+  border-color:#4aaed0;
+}
+.btn.primary{
+  background:linear-gradient(135deg,#8ce9ff,#3faed4);
+  color:#031018;
+  border:0;
+}
+.btn.ghost{
+  background:transparent;
+  color:var(--muted);
+  margin-top:8px;
+}
+/* CAMERA */
+.camera{
+  height:310px;
+  margin:20px 0;
+  border-radius:24px;
+  border:1px solid #263746;
+  background:#020509;
+  overflow:hidden;
+  position:relative;
+}
+.camera video{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  opacity:.6;
+  display:none;
+}
+.fallback{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:#607386;
+}
+.corner{
+  position:absolute;
+  width:38px;
+  height:38px;
+  border-color:#74e5ff;
+  border-style:solid;
+}
+.c1{
+  left:20px;
+  top:20px;
+  border-width:2px 0 0 2px;
+}
+.c2{
+  right:20px;
+  top:20px;
+  border-width:2px 2px 0 0;
+}
+.c3{
+  left:20px;
+  bottom:20px;
+  border-width:0 0 2px 2px;
+}
+.c4{
+  right:20px;
+  bottom:20px;
+  border-width:0 2px 2px 0;
+}
+.scan{
+  position:absolute;
+  left:10%;
+  right:10%;
+  top:50%;
+  height:2px;
+  background:var(--cyan);
+  box-shadow:0 0 20px var(--cyan);
+  opacity:0;
+}
+.scanning .scan{
+  opacity:1;
+  animation:scan 1.5s infinite;
+}
+@keyframes scan{
+  0%{top:18%}
+  50%{top:82%}
+  100%{top:18%}
+}
+.progress{
+  height:5px;
+  background:#15202b;
+  border-radius:99px;
+  overflow:hidden;
+}
+.progress i{
+  display:block;
+  height:100%;
+  width:0;
+  background:var(--cyan);
+  box-shadow:0 0 12px var(--cyan);
+  transition:.25s;
+}
+/* PIN */
+.pinread{
+  height:35px;
+  text-align:center;
+  font-size:25px;
+  letter-spacing:12px;
+  margin-top:25px;
+}
+.pin{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin:20px 0;
+}
+.key{
+  height:62px;
+  border:1px solid var(--line);
+  background:#0d141d;
+  color:white;
+  border-radius:16px;
+  font-size:21px;
+}
+.key:active{
+  background:#182936;
+}
+/* SIGNATURE */
+.canvasWrap{
+  height:220px;
+  margin:20px 0;
+  border:1px dashed #334454;
+  background:#080d13;
+  border-radius:18px;
+  position:relative;
+  overflow:hidden;
+}
+canvas{
+  width:100%;
+  height:100%;
+  touch-action:none;
+}
+.hint{
+  position:absolute;
+  inset:0;
+  display:grid;
+  place-items:center;
+  color:#435467;
+  pointer-events:none;
+}
+/* OTP */
+.otp{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin:25px 0;
+}
+.otp input{
+  width:44px;
+  height:56px;
+  text-align:center;
+  border:1px solid var(--line);
+  background:#0a1017;
+  color:white;
+  border-radius:13px;
+  font-size:22px;
+  outline:none;
+}
+.otp input:focus{
+  border-color:var(--cyan);
+}
+/* UNLOCK */
+.unlock{
+  text-align:center;
+}
+.shield{
+  width:100px;
+  height:100px;
+  border:1px solid #31596b;
+  border-radius:30px;
+  display:grid;
+  place-items:center;
+  margin:55px auto 20px;
+  background:#08151d;
+  box-shadow:0 0 60px #46c9ff22;
+}
+.shield span{
+  font-size:42px;
+  color:var(--green);
+}
+/* MESSENGER */
+header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--line);
+}
+.avatar{
+  width:43px;
+  height:43px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#183746,#0b151d);
+  display:grid;
+  place-items:center;
+  color:var(--cyan);
+  font-weight:800;
+}
+.search{
+  width:100%;
+  margin:18px 0;
+  padding:13px 15px;
+  border-radius:14px;
+  border:1px solid var(--line);
+  background:#090f16;
+  color:white;
+  outline:none;
+}
+.chat{
+  display:flex;
+  gap:13px;
+  padding:15px 4px;
+  border-bottom:1px solid #111b25;
+}
+.chat .info{
+  flex:1;
+}
+.chat p{
+  margin:5px 0 0;
+  color:var(--muted);
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.badge{
+  height:max-content;
+  font-size:10px;
+  color:var(--green);
+  border:1px solid #1e5b46;
+  border-radius:99px;
+  padding:3px 7px;
+}
+.nav{
+  display:flex;
+  gap:8px;
+  margin-top:auto;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.nav button{
+  flex:1;
+  padding:12px;
+  background:transparent;
+  border:0;
+  color:var(--muted);
+}
+.nav button.active{
+  color:var(--cyan);
+}
+.toast{
+  position:fixed;
+  left:50%;
+  bottom:24px;
+  transform:translate(-50%,20px);
+  background:#111c26;
+  border:1px solid #2b4657;
+  color:#eafaff;
+  padding:12px 16px;
+  border-radius:12px;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s;
+  z-index:100;
+}
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+@media(max-width:460px){
+  .app{padding:0}
+  .shell{
+    border-radius:0;
+    min-height:100vh;
+    border:0;
+  }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<main class="shell">
+<!-- ================= WELCOME ================= -->
+<section class="screen active" id="welcome">
+<div class="brand">
+  <span class="dot"></span>
+  OBSIDIAN
+</div>
+<div class="spacer"></div>
+<div class="kicker">PRIVATE COMMUNICATION SYSTEM</div>
+<h1 class="title">
+Your private<br>
+space begins here.
+</h1>
+<p class="sub">
+Một giao diện mô phỏng hệ thống nhắn tin bảo mật cao.
+Toàn bộ xác minh trong bản demo chạy cục bộ và không phải KYC thật.
+</p>
+<div class="status">
+  <span>System</span>
+  <span class="ok">● ONLINE</span>
+</div>
+<button class="btn primary" onclick="go('kyc')">
+BEGIN SECURE ACCESS
+</button>
+<p class="sub" style="text-align:center;font-size:11px">
+SIMULATION • NO REAL IDENTITY DATA
+</p>
+</section>
+<!-- ================= KYC ================= -->
+<section class="screen" id="kyc">
+<div class="brand">
+  <span class="dot"></span>
+  IDENTITY CHECK
+</div>
+<div class="kicker">01 / 04</div>
+<h2 class="title" style="font-size:28px">
+Verify your identity.
+</h2>
+<p class="sub">
+Đưa mặt hoặc tay vào camera và lắc nhẹ.
+Đây chỉ là hiệu ứng mô phỏng; ảnh không được tải lên hoặc lưu trữ.
+</p>
+<div class="camera" id="cameraBox">
+<video id="video" autoplay playsinline muted></video>
+<div class="fallback" id="fallback">
+CAMERA PREVIEW
+</div>
+<i class="corner c1"></i>
+<i class="corner c2"></i>
+<i class="corner c3"></i>
+<i class="corner c4"></i>
+<i class="scan"></i>
+</div>
+<div class="status">
+  <span id="kycStatus">Ready to scan</span>
+  <span id="kycMark" class="muted">WAITING</span>
+</div>
+<div class="progress">
+  <i id="kycProgress"></i>
+</div>
+<div class="spacer"></div>
+<button class="btn primary" onclick="startScan()">
+START CAMERA & SCAN
+</button>
+<button class="btn ghost" onclick="simulateKyc()">
+SIMULATE VERIFICATION
+</button>
+</section>
+<!-- ================= PIN ================= -->
+<section class="screen" id="pin">
+<div class="brand">
+  <span class="dot"></span>
+  SECURITY PIN
+</div>
+<div class="kicker">02 / 04</div>
+<h2 class="title" style="font-size:28px">
+Enter your PIN.
+</h2>
+<p class="sub">
+PIN demo: <b>2580</b>
+</p>
+<div class="pinread" id="pinRead"></div>
+<div class="pin" id="pinPad"></div>
+<button class="btn ghost" onclick="clearPin()">
+CLEAR
+</button>
+</section>
+<!-- ================= SIGNATURE ================= -->
+<section class="screen" id="signature">
+<div class="brand">
+  <span class="dot"></span>
+  SIGNATURE
+</div>
+<div class="kicker">03 / 04</div>
+<h2 class="title" style="font-size:28px">
+Confirm signature.
+</h2>
+<p class="sub">
+Ký bằng ngón tay.
+Chữ ký chỉ tồn tại trong phiên demo.
+</p>
+<div class="canvasWrap">
+<canvas id="sig"></canvas>
+<div class="hint" id="sigHint">
+SIGN HERE
+</div>
+</div>
+<button class="btn primary" onclick="acceptSignature()">
+ACCEPT SIGNATURE
+</button>
+<button class="btn ghost" onclick="clearSignature()">
+CLEAR
+</button>
+</section>
+<!-- ================= 2FA ================= -->
+<section class="screen" id="twofa">
+<div class="brand">
+  <span class="dot"></span>
+  SECOND FACTOR
+</div>
+<div class="kicker">04 / 04</div>
+<h2 class="title" style="font-size:28px">
+Verify access.
+</h2>
+<p class="sub">
+Nhập mã mô phỏng được hiển thị bên dưới.
+</p>
+<div class="status">
+  <span>Demo code</span>
+  <b class="ok">481927</b>
+</div>
+<div class="otp" id="otp"></div>
+<div class="spacer"></div>
+<button class="btn primary" onclick="verifyOtp()">
+VERIFY 2FA
+</button>
+</section>
+<!-- ================= UNLOCK ================= -->
+<section class="screen unlock" id="unlock">
+<div class="brand">
+  <span class="dot"></span>
+  SECURE SESSION
+</div>
+<div class="shield">
+  <span>✓</span>
+</div>
+<div class="kicker">
+ACCESS GRANTED
+</div>
+<h2 class="title" style="font-size:30px">
+Secure session ready.
+</h2>
+<p class="sub">
+Identity, PIN, signature and second factor
+have been verified in simulation mode.
+</p>
+<div class="status">
+  <span>Security state</span>
+  <span class="ok">ACTIVE</span>
+</div>
+<button class="btn primary" onclick="go('messenger')">
+ENTER OBSIDIAN
+</button>
+</section>
+<!-- ================= MESSENGER ================= -->
+<section class="screen" id="messenger">
+<header>
+<div>
+<div class="brand">
+  <span class="dot"></span>
+  OBSIDIAN
+</div>
+<div class="kicker" style="margin-top:5px">
+SECURE SESSION • ACTIVE
+</div>
+</div>
+<div class="avatar">
+O
+</div>
+</header>
+<input
+class="search"
+placeholder="Search secure conversations…"
+>
+<div class="chat">
+<div class="avatar">A</div>
+<div class="info">
+<b>Anonymous Contact</b>
+<p>Encrypted message • 2m</p>
+</div>
+<span class="badge">E2E</span>
+</div>
+<div class="chat">
+<div class="avatar">S</div>
+<div class="info">
+<b>Secure Group</b>
+<p>3 new encrypted messages</p>
+</div>
+<span class="badge">E2E</span>
+</div>
+<div class="chat">
+<div class="avatar">P</div>
+<div class="info">
+<b>Private Contact</b>
+<p>Session message received</p>
+</div>
+<span class="badge">E2E</span>
+</div>
+<div class="spacer"></div>
+<div class="status">
+<span>Security status</span>
+<span class="ok">● ALL SYSTEMS NORMAL</span>
+</div>
+<div class="nav">
+<button class="active">
+MESSAGES
+</button>
+<button>
+CONTACTS
+</button>
+<button onclick="go('welcome')">
+LOCK
+</button>
+</div>
+</section>
+</main>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ================= SCREEN SYSTEM ================= */
+const screens =
+[...document.querySelectorAll(".screen")];
+function go(id){
+screens.forEach(screen => {
+screen.classList.toggle(
+"active",
+screen.id === id
+);
+});
+window.scrollTo(0,0);
+if(id === "pin")
+buildPin();
+if(id === "twofa")
+buildOtp();
+if(id === "signature")
+initCanvas();
+}
+/* ================= TOAST ================= */
+function toast(message){
+const box =
+document.getElementById("toast");
+box.textContent = message;
+box.classList.add("show");
+setTimeout(() => {
+box.classList.remove("show");
+},1800);
+}
+/* ================= CAMERA ================= */
+let cameraStream = null;
+async function startCamera(){
+try{
+cameraStream =
+await navigator.mediaDevices.getUserMedia({
+video:{
+facingMode:"user"
+},
+audio:false
+});
+const video =
+document.getElementById("video");
+video.srcObject =
+cameraStream;
+video.style.display =
+"block";
+document.getElementById("fallback")
+.style.display="none";
+simulateKyc();
+}
+catch(error){
+toast(
+"Camera unavailable — simulation vẫn hoạt động"
+);
+simulateKyc();
+}
+}
+/* ================= KYC SIMULATION ================= */
+function startScan(){
+startCamera();
+}
+function simulateKyc(){
+const box =
+document.getElementById("cameraBox");
+box.classList.add("scanning");
+const progress =
+document.getElementById("kycProgress");
+const status =
+document.getElementById("kycStatus");
+const mark =
+document.getElementById("kycMark");
+let value = 0;
+const timer =
+setInterval(() => {
+value += 10;
+progress.style.width =
+value + "%";
+if(value < 30){
+status.textContent =
+"Detecting presence…";
+}
+else if(value < 60){
+status.textContent =
+"Scanning biometric pattern…";
+}
+else if(value < 90){
+status.textContent =
+"Checking liveness…";
+}
+else{
+status.textContent =
+"Identity verified";
+}
+mark.textContent =
+value < 100
+? "SCANNING"
+: "VERIFIED ✓";
+mark.className =
+value < 100
+? "muted"
+: "ok";
+if(value >= 100){
+clearInterval(timer);
+setTimeout(() => {
+box.classList.remove("scanning");
+go("pin");
+},500);
+}
+},160);
+}
+/* ================= PIN ================= */
+let pin = "";
+function buildPin(){
+const pad =
+document.getElementById("pinPad");
+if(pad.children.length)
+return;
+[1,2,3,4,5,6,7,8,9,0]
+.forEach(number => {
+const button =
+document.createElement("button");
+button.className = "key";
+button.textContent =
+number;
+button.onclick = () =>
+addPin(number);
+pad.appendChild(button);
+});
+}
+function addPin(number){
+if(pin.length >= 4)
+return;
+pin += number;
+document.getElementById("pinRead")
+.textContent =
+"●".repeat(pin.length);
+if(pin.length === 4){
+setTimeout(() => {
+if(pin === "2580"){
+pin = "";
+go("signature");
+}
+else{
+pin = "";
+document.getElementById("pinRead")
+.textContent = "";
+toast("Incorrect demo PIN");
+}
+},250);
+}
+}
+function clearPin(){
+pin = "";
+document.getElementById("pinRead")
+.textContent = "";
+}
+/* ================= SIGNATURE ================= */
+let ctx;
+let drawing = false;
+let hasSignature = false;
+function initCanvas(){
+const canvas =
+document.getElementById("sig");
+const rect =
+canvas.getBoundingClientRect();
+const ratio =
+window.devicePixelRatio || 1;
+canvas.width =
+rect.width * ratio;
+canvas.height =
+rect.height * ratio;
+ctx =
+canvas.getContext("2d");
+ctx.scale(ratio,ratio);
+ctx.lineWidth = 3;
+ctx.lineCap = "round";
+ctx.strokeStyle =
+"#8ce9ff";
+function position(event){
+const point =
+event.touches
+? event.touches[0]
+: event;
+return [
+point.clientX -
+rect.left,
+point.clientY -
+rect.top
+];
+}
+canvas.onpointerdown =
+event => {
+drawing = true;
+hasSignature = true;
+document.getElementById("sigHint")
+.style.display = "none";
+ctx.beginPath();
+ctx.moveTo(
+...position(event)
+);
+};
+canvas.onpointermove =
+event => {
+if(!drawing)
+return;
+ctx.lineTo(
+...position(event)
+);
+ctx.stroke();
+};
+canvas.onpointerup =
+() => drawing = false;
+canvas.onpointerleave =
+() => drawing = false;
+}
+function clearSignature(){
+const canvas =
+document.getElementById("sig");
+if(ctx){
+ctx.clearRect(
+0,
+0,
+canvas.width,
+canvas.height
+);
+}
+hasSignature = false;
+document.getElementById("sigHint")
+.style.display = "grid";
+}
+function acceptSignature(){
+if(!hasSignature){
+toast("Please sign first");
+return;
+}
+toast("Signature accepted");
+setTimeout(() => {
+go("twofa");
+},500);
+}
+/* ================= 2FA ================= */
+function buildOtp(){
+const box =
+document.getElementById("otp");
+if(box.children.length)
+return;
+for(let i=0;i<6;i++){
+const input =
+document.createElement("input");
+input.maxLength = 1;
+input.inputMode = "numeric";
+input.addEventListener(
+"input",
+() => {
+input.value =
+input.value.replace(/\D/g,"");
+if(
+input.value &&
+input.nextElementSibling
+){
+input.nextElementSibling
+.focus();
+}
+});
+box.appendChild(input);
+}
+}
+function verifyOtp(){
+const value =
+[...document.querySelectorAll(
+"#otp input"
+)]
+.map(input => input.value)
+.join("");
+if(value === "481927"){
+go("unlock");
+}
+else{
+toast("Invalid demo code");
+}
+}
+</script>
+</body>
+</html>
